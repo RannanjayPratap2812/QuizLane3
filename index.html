@@ -58,7 +58,6 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const SYM=['▲','◆','●','■'];
 const TF=['True','False'];
-const BOTS=[{u:'maya_r',m:1240,f:1,s:.85},{u:'sam.k',m:980,f:1,s:.75},{u:'lin_88',m:860,f:0,s:.7},{u:'priya_s',m:720,f:0,s:.65},{u:'dev_t',m:510,f:1,s:.6},{u:'zoe.codes',m:300,f:0,s:.55},{u:'omar_h',m:150,f:0,s:.5}];
 const QZ=[
 {id:1,title:'Solar System Basics',subj:'Science',qs:[
 {q:'Which planet is closest to the Sun?',o:['Mercury','Venus','Earth','Mars'],a:0,e:'Mercury orbits about 58 million km from the Sun.'},
@@ -161,7 +160,7 @@ function begin(id,opp){clearInterval(T);clearTimeout(OT);const qz=PQ&&PQ.id==id?
 function startQ(){const g=S.game;g.left=15;g.sel=null;g.hide=[];g.dbl=false;render();clearInterval(T);T=setInterval(tick,1000);
  if(g.opp)OT=setTimeout(oppStep,2500+Math.random()*8000)}
 function tick(){const g=S.game;g.left--;if(g.left<=0)return pick(-1);const e=$('#tm');if(e){e.textContent=g.left+'s';$('#tb').style.width=g.left/15*100+'%'}}
-function oppStep(){const g=S.game;if(!g||!g.opp||g.done||g.oi>g.i)return;g.oi++;if(Math.random()<g.opp.s)g.os+=100+Math.round(Math.random()*70);const e=$('#opp');if(e)e.textContent=`@${g.opp.u}: ${g.os} pts (${g.oi}/${g.qz.qs.length})`}
+function oppStep(){const g=S.game;if(!g||!g.opp||g.opp.real||g.done||g.oi>g.i)return;g.oi++;if(Math.random()<g.opp.s)g.os+=100+Math.round(Math.random()*70);const e=$('#opp');if(e)e.textContent=`@${g.opp.u}: ${g.os} pts (${g.oi}/${g.qz.qs.length})`}
 function pick(k){const g=S.game;if(g.sel!=null)return;clearInterval(T);g.sel=k;const q=g.qz.qs[g.i],sj=q.s||g.qz.subj,st=S.stats[sj]=S.stats[sj]||{c:0,t:0};st.t++;
  if(k==q.a){g.ok++;st.c++;g.streak++;g.best=Math.max(g.best,g.streak);g.score+=(100+g.left*4+Math.min(g.streak,5)*10)*(g.dbl?2:1)}else{g.streak=0;g.wrong.push(q)}render()}
 function fifty(){const g=S.game,q=g.qz.qs[g.i];if(!g.pw.f||g.sel!=null||q.o.length<4)return;g.pw.f=0;g.hide=q.o.map((_,i)=>i).filter(i=>i!=q.a).sort(()=>Math.random()-.5).slice(0,2);render()}
@@ -172,35 +171,23 @@ function finish(){const g=S.game,id=g.qz.id;g.done=true;clearInterval(T);if(g.qz
  g.xp.push(['Quiz, accuracy and streak',Math.round((10+5*g.ok+2*Math.min(g.best,5))*f)]);
  if(pl>0&&g.score>(S.bests[id]||0))g.xp.push(['Beat your previous score',5]);
  S.bests[id]=Math.max(S.bests[id]||0,g.score);
- if(g.opp){const pend=g.opp.real&&g.opp.theirScore==null,w=!pend&&g.score>g.os,t=!pend&&g.score==g.os;if(w)S.wl.w++;else if(!t&&!pend)S.wl.l++;g.xp.push([pend?'Challenge sent':w?'Duel win':t?'Duel draw':'Duel played',w?30:t?15:10]);duelSave(g)}
+ if(g.opp){g.xp.push(['Duel played',10]);duelSave(g)}
  g.xp.forEach(([s,a])=>add(s,a));render()}
 function vGame(){const g=S.game,n=g.qz.qs.length;
- if(g.done){const pend=g.opp&&g.opp.real&&g.opp.theirScore==null,w=pend?`Challenge sent to @${g.opp.u}`:g.opp?(g.score>g.os?'You won the duel!':g.score==g.os?'Draw!':`@${g.opp.u} won this one.`):'Quiz complete';
+ if(g.done){const pend=g.opp&&g.opp.real&&g.opp.theirScore==null,w=pend?`Score saved for your duel with @${g.opp.u}`:g.opp?(g.score>g.os?'You won the duel!':g.score==g.os?'Draw!':`@${g.opp.u} won this one.`):'Quiz complete';
   return `<div class="card"><h2>${w}</h2><p>Score <b>${g.score}</b>${g.opp&&!pend?` vs ${g.os}`:''} • ${g.ok}/${n} correct • best streak ${g.best}</p>
   ${g.xp.map(([s,a])=>`<div class="row"><span>${s}</span><b class="ok-t">+${a} XP</b></div>`).join('')}
   ${g.wrong.length&&!g.opp?`<h3 style="margin-top:14px">Review misses</h3>`+g.wrong.map(q=>`<div class="card"><b>${esc(q.q)}</b><br>Answer: ${esc(q.o[q.a])}<br><span class="muted">${esc(q.e)} (AI-free explanation)</span>${S.key?`<br><button onclick="askWhy(decodeURIComponent('${encodeURIComponent(q.q).replace(/'/g,'%27')}'))">Ask the tutor why</button>`:'<br><span class="muted">Connect a key in Tutor for AI explanations.</span>'}</div>`).join(''):''}
-  <div class="row" style="margin-top:12px"><button class="pri" onclick="S.game=null;render()">Done</button>${g.opp?`<button onclick="begin('${g.qz.id}',S.game.opp)">Rematch</button>`:`<button onclick="begin('${g.qz.id}')">Play again</button>`}</div></div>`}
+  <div class="row" style="margin-top:12px"><button class="pri" onclick="S.game=null;render()">Done</button>${g.opp?`<span class="muted">Challenge them again from the Friends tab.</span>`:`<button onclick="begin('${g.qz.id}')">Play again</button>`}</div></div>`}
  const q=g.qz.qs[g.i],a=g.sel!=null;
  return `<div class="card">${g.qz.short&&!g.i?`<p class="muted">Only ${n} questions matched your settings. Use AI generation for more.</p>`:''}<div class="row"><b>Question ${g.i+1} of ${n}</b><span>Score ${g.score} • streak ${g.streak}${g.dbl?' • 2× active':''}</span></div>
- ${g.opp?`<div class="muted" id="opp">${g.opp.real?(g.opp.theirScore!=null?`@${esc(g.opp.u)} scored ${g.opp.theirScore}`:`Async duel: @${esc(g.opp.u)} plays later`):`@${esc(g.opp.u)}: ${g.os} pts (${g.oi}/${n})`}</div>`:''}
+ ${g.opp?`<div class="muted" id="opp">${g.opp.real?(g.opp.theirScore!=null?`@${esc(g.opp.u)} scored ${g.opp.theirScore}`:`Async duel with @${esc(g.opp.u)}: the result shows on the Friends tab`):`@${esc(g.opp.u)}: ${g.os} pts (${g.oi}/${n})`}</div>`:''}
  <div class="bar" style="margin-top:8px"><i id="tb" style="width:${g.left/15*100}%"></i></div><div class="muted" id="tm">${g.left}s</div>
  <div class="q">${esc(q.q)}</div>
  <div class="grid">${q.o.map((o,i)=>`<button class="tile t${i} ${g.hide.includes(i)?'hid':''} ${a&&i==q.a?'ok':''} ${a&&i!=q.a?'no':''}" ${a?'disabled':''} onclick="pick(${i})"><span class="sym">${SYM[i]}</span>${esc(o)}</button>`).join('')}</div>
  ${a?`<p><span class="${g.sel==q.a?'ok-t':'bad-t'}">${g.sel==q.a?'Correct':g.sel<0?'Time’s up':'Not quite'}.</span> ${esc(q.e)}</p><button class="pri" onclick="nextQ()">${g.i+1>=n?'See results':'Next question'}</button>`
  :`<div class="row" style="margin-top:14px"><button onclick="fifty()" ${g.pw.f&&q.o.length>3?'':'disabled'}>50/50</button><button onclick="dbl()" ${g.pw.d?'':'disabled'}>Double points</button></div>`}
  </div>`}
-
-function vDuel(){const bs=BOTS.map(b=>`<div class="lb"><span>@${b.u}</span><button onclick="challenge('${b.u}')">Challenge</button></div>`).join('');
- return `<h2>Challenge a username</h2><p class="muted">No code and no host. Same questions, same timer, higher score wins. AI help is off during duels.</p>
- <div class="card"><label for="un">Their username</label><input id="un" placeholder="e.g. maya_r" autocomplete="off">
- <label for="dq">Quiz</label><select id="dq"><option value="0">Random</option>${S.quizzes.map(z=>`<option value="${z.id}">${esc(z.title)}</option>`).join('')}</select>
- <div class="row" style="margin-top:10px"><button class="pri" onclick="challenge()">Send challenge</button><span class="muted" role="status">${esc(S.inv)}</span></div></div>
- <div class="card"><h3>Friends and rivals</h3>${bs}<p class="muted">Duels: ${S.wl.w} won, ${S.wl.l} lost. Unknown usernames get an async challenge: you play now and they play later.</p></div>`}
-function challenge(u){u=(u||$('#un').value).trim().replace(/^@/,'');if(!u)return S.inv='Type a username first.',render();
- if(u.toLowerCase()==S.user.toLowerCase())return S.inv='You can’t duel yourself.',render();
- const b=BOTS.find(x=>x.u==u.toLowerCase()),opp=b||{u,s:.6,async:1},dq=+($('#dq')||{value:0}).value,id=dq||S.quizzes[Math.floor(Math.random()*S.quizzes.length)].id;
- S.inv=`Invite sent to @${u}…`;render();
- setTimeout(()=>{S.inv=b?`@${u} accepted.`:`@${u} is offline. Playing async.`;render();setTimeout(()=>{S.inv='';begin(id,opp)},900)},1000)}
 
 function vCreate(){const d=S.draft;
  return `<h2>Create a quiz</h2><div class="card"><label for="ct">Title</label><input id="ct" value="${esc(d.title)}"><label for="cs">Subject</label><input id="cs" value="${esc(d.subj)}" placeholder="e.g. History"></div>
@@ -218,7 +205,7 @@ function addQ(){sv();const q=$('#cq').value.trim(),tf=$('#cty').value=='tf',o=tf
 function pub(){sv();const d=S.draft;S.quizzes.push({id:++S.nid,title:d.title||'Untitled quiz',subj:d.subj||'General',qs:d.qs});S.draft={title:'',subj:'',qs:[]};S.tab='play';render()}
 
 function dleft(){const d=new Date();return Math.ceil((Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,1)-d)/864e5)}
-function vRanks(){const m=mxp(),ym=YM(),fr=FR(),all=LB.filter(r=>r.id!=UID&&!r.hidden&&r.ym==ym&&(S.lbf=='all'||fr.includes(r.id))).map(r=>({u:r.username,x:r.mxp||0})).concat(S.pub?[{u:S.user,x:m,me:1}]:[]).sort((a,b)=>b.x-a.x),ri=all.findIndex(x=>x.me),ab=ri>0?all[ri-1]:null;
+function vRanks(){const m=mxp(),ym=YM(),fr=FR(),all=LB.filter(r=>r.id!=UID&&!r.hidden&&r.ym==ym&&(S.lbf=='all'||(fr.includes(r.id)&&(FA[r.id]||[]).includes(UID)))).map(r=>({u:r.username,x:r.mxp||0})).concat(S.pub?[{u:S.user,x:m,me:1}]:[]).sort((a,b)=>b.x-a.x),ri=all.findIndex(x=>x.me),ab=ri>0?all[ri-1]:null;
  const row=(r,i)=>`<div class="lb ${r.me?'me':''}"><b>${i+1}</b><span>@${esc(r.u)}</span><b>${r.x} XP</b></div>`;
  const ms=Object.entries(S.stats);
  return `<h2>Monthly leaderboard</h2><p class="muted">Resets on the 1st (UTC), ${dleft()} days left. Lifetime XP and level are never lost.</p>
@@ -262,7 +249,7 @@ async function genQuiz(){const t=$('#gt').value.trim(),s=$('#gs');if(!t)return s
  S.draft={title:j.title||t,subj:j.subject||'General',qs};S.tab='create';S.note='AI draft ready. Edit it, then publish.';render()}catch(e){s.textContent=e instanceof SyntaxError?'The AI reply wasn’t valid. Try again.':gerr(e)}}
 /* ====== CONFIG: paste your Firebase web config (Project settings > Your apps) ====== */
 const FB={apiKey:'AIzaSyDTrz-9teoxcbjBb9B5JV8sEkBOaOGdcU4',authDomain:'quizlane-c0850.firebaseapp.com',projectId:'quizlane-c0850',storageBucket:'quizlane-c0850.firebasestorage.app',messagingSenderId:'904678442496',appId:'1:904678442496:web:6fb48e66acf0fe050e7ae5'};
-let AU=null,FS=null,UN=[],UID=null,UM=null,LB=[],FA={},CH=[],RP=[],SY='';
+let AU=null,FS=null,UN=[],UID=null,UM=null,LB=[],FA={},FD={},CH=[],RP=[],SY='';
 const YM=()=>new Date().toISOString().slice(0,7);
 const FR=()=>FA[UID]||[];
 const nm=id=>{const r=LB.find(x=>x.id==id);return r?r.username:'someone'};
@@ -304,33 +291,49 @@ async function out(){UN.forEach(f=>f());UN=[];if(AU)await AU.signOut();UID=null;
 async function sync(){if(!FS||S.auth!='ready')return;const p=prof(),k=JSON.stringify(p);if(k==SY)return;SY=k;try{await FS.doc('users/'+UID).set(p,{merge:true})}catch(e){SY=''}}
 
 /* ====== Shared data (live Firestore listeners) ====== */
-function listen(){if(UN.length)return;const r=()=>{if(!S.game&&!(document.activeElement&&/INPUT|SELECT/.test(document.activeElement.tagName)))render()};
+function listen(){if(UN.length)return;const r=()=>{settle();if(!S.game&&!(document.activeElement&&/INPUT|SELECT/.test(document.activeElement.tagName)))render()};
  const on=(c,f)=>UN.push(FS.collection(c).onSnapshot(s=>{f(s);r()}));
  on('users',s=>LB=s.docs.map(d=>({id:d.id,...d.data()})));
- on('friends',s=>{FA={};s.docs.forEach(d=>FA[d.id]=d.data().ids||[])});
+ on('friends',s=>{FA={};FD={};s.docs.forEach(d=>{FA[d.id]=d.data().ids||[];FD[d.id]=d.data().declined||[]})});
  on('challenges',s=>CH=s.docs.map(d=>({id:d.id,...d.data()})));
  on('replies',s=>RP=s.docs.map(d=>({id:d.id,...d.data()})))}
-async function addF(id){try{await FS.doc('friends/'+UID).set({ids:[...new Set([...FR(),id])]})}catch(e){S.inv='Couldn’t add friend.'}render()}
-async function delF(id){try{await FS.doc('friends/'+UID).set({ids:FR().filter(x=>x!=id)})}catch(e){S.inv='Couldn’t remove friend.'}render()}
-async function duelSave(g){const o=g.opp;if(!FS||!o||!o.real)return;const c=o.theirScore==null;
- try{await FS.doc((c?'challenges/':'replies/')+UID).set({to:o.id,quizId:+g.qz.id,title:g.qz.title,score:g.score,from:S.user,ts:Date.now()})}catch(e){}}
-function findF(){const u=$('#fs').value.trim().toLowerCase().replace(/^@/,''),r=LB.find(x=>x.username==u&&x.id!=UID);if(!r){S.inv='No player with that username yet.';return render()}S.inv='Added @'+u+'.';addF(r.id)}
-function chal(id){const q=$('#dq').value;S.inv='';begin(q,{u:nm(id),id,real:true,theirScore:null})}
-function playCh(cid){const c=CH.find(x=>x.id==cid);if(c)begin(c.quizId,{u:c.from,id:c.id,real:true,theirScore:c.score})}
-
+/* friends: ids = people I have added or accepted; declined = requests I refused. Mutual = both lists contain each other. */
+async function saveF(ids,dec){try{await FS.doc('friends/'+UID).set({ids,declined:dec})}catch(e){S.inv='Couldn’t update friends.'}render()}
+const addF=id=>saveF([...new Set([...FR(),id])],(FD[UID]||[]).filter(x=>x!=id));
+const decF=id=>saveF(FR().filter(x=>x!=id),[...new Set([...(FD[UID]||[]),id])]);
+const delF=id=>(FA[id]||[]).includes(UID)?decF(id):saveF(FR().filter(x=>x!=id),FD[UID]||[]);
+async function duelSave(g){const o=g.opp;if(!FS||!o||!o.role)return;try{await FS.doc((o.role=='challenger'?'challenges/':'replies/')+UID).set({score:g.score},{merge:true})}catch(e){}}
+function findF(){const u=$('#fs').value.trim().toLowerCase().replace(/^@/,''),r=LB.find(x=>x.username==u&&x.id!=UID);if(!r){S.inv='No player with that username yet.';return render()}S.inv='Request sent to @'+u+'.';addF(r.id)}
+async function chal(id){const q=+$('#dq').value,z=S.quizzes.find(x=>x.id==q);try{await FS.doc('challenges/'+UID).set({to:id,quizId:q,title:z.title,from:S.user,ts:Date.now(),score:null});S.inv='Challenge request sent to @'+nm(id)+'. You can play once they accept.'}catch(e){S.inv='Couldn’t send the challenge.'}render()}
+async function acc(cid){const c=CH.find(x=>x.id==cid);if(!c)return;try{await FS.doc('replies/'+UID).set({to:c.id,for:c.ts,status:'accepted',from:S.user,ts:Date.now(),score:null});playCh(cid)}catch(e){S.inv='Couldn’t accept.';render()}}
+async function decl(cid){const c=CH.find(x=>x.id==cid);if(!c)return;try{await FS.doc('replies/'+UID).set({to:c.id,for:c.ts,status:'declined',from:S.user,ts:Date.now(),score:null})}catch(e){S.inv='Couldn’t decline.'}render()}
+function playCh(cid){const c=CH.find(x=>x.id==cid);if(c)begin(c.quizId,{u:c.from,id:c.id,real:true,theirScore:null,role:'responder'})}
+function playMine(){const m=CH.find(c=>c.id==UID);if(m)begin(m.quizId,{u:nm(m.to),id:m.to,real:true,theirScore:null,role:'challenger'})}
+function settle(){const dn=S.done=S.done||{},rs=[],mine=CH.find(c=>c.id==UID),mr=mine&&RP.find(p=>p.id==mine.to&&p.to==UID&&p.for==mine.ts);
+ if(mine&&mr&&mine.score!=null&&mr.score!=null)rs.push([UID+mine.ts,mine.score,mr.score]);
+ const ir=RP.find(p=>p.id==UID),ic=ir&&CH.find(c=>c.id==ir.to&&c.ts==ir.for);
+ if(ic&&ir.score!=null&&ic.score!=null)rs.push([ic.id+ic.ts,ir.score,ic.score]);
+ rs.forEach(([k,a,b])=>{if(dn[k])return;dn[k]=1;if(a>b){S.wl.w++;add('Duel win bonus',20)}else if(a==b)add('Duel draw bonus',5);else S.wl.l++;save()})}
 function vDuel(){
  if(S.auth!='ready')return `<h2>Friends and duels</h2><div class="card"><p>Friends and duels need an account. You’re playing offline.</p><button class="pri" onclick="init()">Sign in</button></div>`;
- const fr=FR(),dir=LB.filter(r=>r.id!=UID&&!r.hidden&&!fr.includes(r.id)).slice(0,8),
- inc=CH.filter(c=>c.to==UID&&!RP.some(p=>p.id==UID&&p.to==c.id&&p.ts>=c.ts)),
- mine=CH.find(c=>c.id==UID),rep=mine&&RP.filter(p=>p.to==UID&&p.ts>=mine.ts)[0],
+ const fr=FR(),dec=FD[UID]||[],mf=id=>fr.includes(id)&&(FA[id]||[]).includes(UID),by=id=>LB.find(r=>r.id==id),
+ friends=fr.filter(mf).map(by).filter(Boolean),
+ reqIn=LB.filter(r=>r.id!=UID&&(FA[r.id]||[]).includes(UID)&&!fr.includes(r.id)&&!dec.includes(r.id)),
+ reqOut=fr.filter(id=>!mf(id)).map(by).filter(Boolean),
+ dir=LB.filter(r=>r.id!=UID&&!r.hidden&&!fr.includes(r.id)&&!reqIn.includes(r)).slice(0,8),
+ inc=CH.filter(c=>c.to==UID).map(c=>({c,r:RP.find(p=>p.id==UID&&p.to==c.id&&p.for==c.ts)})).filter(x=>!x.r||x.r.status!='declined'),
+ mine=CH.find(c=>c.id==UID),mr=mine&&RP.find(p=>p.id==mine.to&&p.to==UID&&p.for==mine.ts),
  qo=S.quizzes.filter(z=>z.id<=3).map(z=>`<option value="${z.id}">${esc(z.title)}</option>`).join(''),
- row=(r,f)=>`<div class="lb"><span>@${esc(r.username)} <span class="muted">Lv ${Math.floor(Math.sqrt((r.xp||0)/50))+1}${(FA[r.id]||[]).includes(UID)?' • added you':''}</span></span>${f?`<button class="pri" onclick="chal('${esc(r.id)}')">Challenge</button> <button onclick="delF('${esc(r.id)}')">Remove</button>`:`<button onclick="addF('${esc(r.id)}')">Add friend</button>`}</div>`;
- return `<h2>Friends and duels</h2><p class="muted">Real players with an account. Duels are async: you play, they play later, and scores are compared. AI help is off during duels.</p>
- ${inc.length?`<div class="card"><h3>Challenges for you</h3>`+inc.map(c=>`<div class="lb"><span>@${esc(c.from)} challenged you on ${esc(c.title)}</span><button class="pri" onclick="playCh('${esc(c.id)}')">Play</button></div>`).join('')+`</div>`:''}
- ${mine?`<div class="card"><h3>Your last challenge</h3>${rep?`@${esc(rep.from)} scored ${rep.score} vs your ${mine.score}: <b class="${rep.score<mine.score?'ok-t':rep.score>mine.score?'bad-t':''}">${rep.score<mine.score?'You won':rep.score>mine.score?'They won':'Draw'}</b>`:`Waiting for @${esc(nm(mine.to))} to play ${esc(mine.title)} (you scored ${mine.score}).`}</div>`:''}
- <div class="card"><h3>Your friends</h3><label for="dq">Quiz for challenges</label><select id="dq">${qo}</select>${fr.map(id=>LB.find(r=>r.id==id)).filter(Boolean).map(r=>row(r,1)).join('')||'<p class="muted">No friends yet. Add someone below.</p>'}<p class="muted">Duels: ${S.wl.w} won, ${S.wl.l} lost.</p></div>
- <div class="card"><h3>Find a player</h3><div class="row" style="flex-wrap:nowrap"><input id="fs" placeholder="Exact username" autocomplete="off"><button onclick="findF()">Add</button></div><p class="muted" role="status">${esc(S.inv)}</p>
- ${dir.length?'<h3 style="margin-top:12px">Other players</h3>'+dir.map(r=>row(r,0)).join(''):'<p class="muted">No other players have joined yet.</p>'}</div>`}
+ row=(r,k)=>`<div class="lb"><span>@${esc(r.username)} <span class="muted">Lv ${Math.floor(Math.sqrt((r.xp||0)/50))+1}${k=='out'?((FD[r.id]||[]).includes(UID)?' • declined':' • request pending'):''}</span></span><span>${k=='f'?`<button class="pri" onclick="chal('${esc(r.id)}')">Challenge</button> <button onclick="delF('${esc(r.id)}')">Remove</button>`:k=='in'?`<button class="pri" onclick="addF('${esc(r.id)}')">Accept</button> <button onclick="decF('${esc(r.id)}')">Decline</button>`:k=='out'?`<button onclick="delF('${esc(r.id)}')">Cancel</button>`:`<button onclick="addF('${esc(r.id)}')">Send request</button>`}</span></div>`,
+ verdict=(a,b)=>a>b?'you won':a<b?'they won':'draw';
+ return `<h2>Friends and duels</h2><p class="muted">Friend and challenge requests need the other player to accept. Duels are async: you each play your round, then the result shows here. AI help is off during duels.</p>
+ ${reqIn.length?`<div class="card"><h3>Friend requests</h3>${reqIn.map(r=>row(r,'in')).join('')}</div>`:''}
+ ${inc.length?`<div class="card"><h3>Challenge requests</h3>`+inc.map(({c,r})=>`<div class="lb"><span>@${esc(c.from)} challenged you to ${esc(c.title)}${r&&r.score!=null?(c.score!=null?` • ${verdict(r.score,c.score)} (${r.score} vs ${c.score})`:` • you scored ${r.score}, waiting for them`):''}</span><span>${!r?`<button class="pri" onclick="acc('${esc(c.id)}')">Accept</button> <button onclick="decl('${esc(c.id)}')">Decline</button>`:r.score==null?`<button class="pri" onclick="playCh('${esc(c.id)}')">Play</button>`:''}</span></div>`).join('')+`</div>`:''}
+ ${mine?`<div class="card"><h3>Your challenge to @${esc(nm(mine.to))}</h3>`+(!mr?`<p>Waiting for them to accept ${esc(mine.title)}.</p>`:mr.status=='declined'?`<p>They declined.</p>`:mine.score==null?`<p>Accepted! Play your round.</p><button class="pri" onclick="playMine()">Play now</button>`:mr.score==null?`<p>You scored ${mine.score}. Waiting for them to play.</p>`:`<p>${mine.score} vs ${mr.score}: <b class="${mine.score>mr.score?'ok-t':mine.score<mr.score?'bad-t':''}">${mine.score>mr.score?'You won':mine.score<mr.score?'They won':'Draw'}</b></p>`)+`</div>`:''}
+ <div class="card"><h3>Your friends</h3><label for="dq">Quiz for challenges</label><select id="dq">${qo}</select>${friends.map(r=>row(r,'f')).join('')||'<p class="muted">No friends yet. Send a request below.</p>'}<p class="muted" role="status">${esc(S.inv)}</p><p class="muted">Duels: ${S.wl.w} won, ${S.wl.l} lost.</p></div>
+ ${reqOut.length?`<div class="card"><h3>Requests you sent</h3>${reqOut.map(r=>row(r,'out')).join('')}</div>`:''}
+ <div class="card"><h3>Find a player</h3><div class="row" style="flex-wrap:nowrap"><input id="fs" placeholder="Exact username" autocomplete="off"><button onclick="findF()">Send request</button></div>
+ ${dir.length?'<h3 style="margin-top:12px">Other players</h3>'+dir.map(r=>row(r,'d')).join(''):'<p class="muted">No other players have joined yet.</p>'}</div>`}
 
 
 /* ====== Learn: England national curriculum by key stage ====== */
