@@ -45,7 +45,9 @@ input,select{width:100%;padding:9px 12px;border:2px solid var(--line);border-rad
 .ok-t{color:var(--ok);font-weight:800}.bad-t{color:var(--bad);font-weight:800}
 label{display:block;font-weight:600;margin:8px 0 4px;font-size:14px}
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script></head>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script></head>
 <body><div class="wrap">
 <header><h1>Quizlane</h1><span class="chip" id="me"></span></header>
 <nav id="nav"></nav>
@@ -258,9 +260,9 @@ async function genQuiz(){const t=$('#gt').value.trim(),s=$('#gs');if(!t)return s
  s.textContent='Generating…';try{const j=JSON.parse((await gem(`Write a ${S.pr.n}-question multiple-choice quiz on "${t}" for grade ${S.pr.grade} students, difficulty ${LVN[S.pr.lvl]}. Return only JSON: {"title":"","subject":"","questions":[{"q":"","o":["","","",""],"a":0,"e":""}]}`,1)).replace(/```json|```/g,'').trim());
  const qs=j.questions.filter(q=>q.o&&q.o.length==4&&q.a>=0&&q.a<4);if(!qs.length)throw new Error('The AI returned no usable questions.');
  S.draft={title:j.title||t,subj:j.subject||'General',qs};S.tab='create';S.note='AI draft ready. Edit it, then publish.';render()}catch(e){s.textContent=e instanceof SyntaxError?'The AI reply wasn’t valid. Try again.':gerr(e)}}
-/* ====== CONFIG: paste your Supabase values (see SETUP.md) ====== */
-const SB_URL='https://oomyfiilxrbdcjlerhbf.supabase.co',SB_KEY='sb_publishable_2zOp5uOKE9mSGJpeZgG_ag_S7Ju6ORy';
-let SB=null,UID=null,UM=null,LB=[],FA={},CH=[],RP=[],SY='',PT=0,PE='';
+/* ====== CONFIG: paste your Firebase web config (Project settings > Your apps) ====== */
+const FB={apiKey:'AIzaSyDTrz-9teoxcbjBb9B5JV8sEkBOaOGdcU4',authDomain:'quizlane-c0850.firebaseapp.com',projectId:'quizlane-c0850',storageBucket:'quizlane-c0850.firebasestorage.app',messagingSenderId:'904678442496',appId:'1:904678442496:web:6fb48e66acf0fe050e7ae5'};
+let AU=null,FS=null,UN=[],UID=null,UM=null,LB=[],FA={},CH=[],RP=[],SY='';
 const YM=()=>new Date().toISOString().slice(0,7);
 const FR=()=>FA[UID]||[];
 const nm=id=>{const r=LB.find(x=>x.id==id);return r?r.username:'someone'};
@@ -276,44 +278,42 @@ const vSet=()=>`<h2>Settings</h2><div class="card"><h3>Theme</h3><div class="row
 <h3 style="margin-top:14px">Accent colour</h3><div class="row" style="justify-content:flex-start">${Object.keys(ACC).map(k=>`<button class="${(S.accent||'indigo')==k?'on':''}" onclick="S.accent='${k}';applyTheme();render()">${k[0].toUpperCase()+k.slice(1)}</button>`).join('')}</div></div>
 <div class="card"><h3>Account</h3><p class="muted">${S.auth=='ready'?'Signed in as @'+esc(S.user)+(UM&&UM.email?' ('+esc(UM.email)+')':''):'Playing offline.'}</p>${S.auth=='ready'?'<button onclick="out()">Sign out</button>':'<button class="pri" onclick="init()">Sign in</button>'}</div>`;
 
-/* ====== Auth screens ====== */
+/* ====== Auth screens (Firebase, Google sign-in only) ====== */
 const lab=(f,t)=>`<label for="${f}" style="position:absolute;left:-9999px">${t}</label>`;
-const EM=()=>`<p class="muted">Sign up or log in to play with friends.</p><button class="pri" onclick="gSign()">Continue with Google</button><p class="muted">or use an emailed code</p>${lab('ge','Email address')}<input id="ge" type="email" placeholder="you@gmail.com" style="max-width:300px" autocomplete="email"><p class="muted" role="status">${esc(S.note)}</p><button onclick="sendCode()">Email me a code</button>`;
-const CD=()=>`<p>We emailed a code to <b>${esc(PE)}</b>. Enter it below.</p>${lab('go','Code')}<input id="go" inputmode="numeric" maxlength="10" placeholder="Code" style="max-width:220px" autocomplete="one-time-code"><p class="muted" role="status">${esc(S.note)}</p><button class="pri" onclick="verify()">Verify</button> <button onclick="S.auth='email';S.note='';render()">Back</button>`;
+const EM=()=>`<p class="muted">Sign up or log in to play with friends.</p><button class="pri" onclick="gSign()">Continue with Google</button><p class="muted" role="status">${esc(S.note)}</p>`;
 const NM=()=>`<p>Signed in${UM&&UM.email?' as <b>'+esc(UM.email)+'</b>':''}. Pick a unique username so friends can find you.</p>${lab('gu','Username')}<input id="gu" placeholder="e.g. alex_k" maxlength="20" style="max-width:280px" autocomplete="off"><p class="muted" role="status">${esc(S.note)}</p><button class="pri" onclick="claim()">Create my account</button>`;
 const OFF=()=>`<p>Sign-in isn’t set up (or couldn’t load), so friends and the shared leaderboard are off.</p><p class="muted" role="status">${esc(S.why||'')}</p><button class="pri" onclick="S.auth='offline';render()">Play offline</button> <button onclick="init()">Try again</button>`;
-const vGate=()=>{const a=S.auth;return `<div class="card" style="text-align:center;padding:32px 16px"><h2>Welcome to Quizlane</h2>`+(a=='email'?EM():a=='code'?CD():a=='name'?NM():a=='loading'?`<p class="muted" role="status">Checking your sign-in…</p>`:OFF())+`</div>`};
+const vGate=()=>{const a=S.auth;return `<div class="card" style="text-align:center;padding:32px 16px"><h2>Welcome to Quizlane</h2>`+(a=='email'?EM():a=='name'?NM():a=='loading'?`<p class="muted" role="status">Checking your sign-in…</p>`:OFF())+`</div>`};
 
 async function init(){S.auth='loading';render();
- if(SB_URL.startsWith('YOUR_')||SB_KEY.startsWith('YOUR_')){S.why='SB_URL and SB_KEY in index.html still hold the placeholder text. Paste your Supabase Project URL and anon key there, then commit.';S.auth='off';return render()}
- if(!window.supabase){S.why='The Supabase script did not load (blocked, offline or an ad blocker).';S.auth='off';return render()}
- try{SB=SB||supabase.createClient(SB_URL,SB_KEY);const{data:{session}}=await SB.auth.getSession();
-  if(!session){S.auth='email';return render()}
-  UID=session.user.id;UM={email:session.user.email};
-  const{data:p}=await SB.from('profiles').select('*').eq('id',UID).maybeSingle();
-  if(p){S.user=p.username;if(p.xp>S.xp)S.xp=p.xp;if(p.ym==YM()&&p.mxp>mxp())S.ledger.push({src:'Synced from your account',amt:p.mxp-mxp(),ts:Date.now()});if(p.wins+p.losses>S.wl.w+S.wl.l)S.wl={w:p.wins,l:p.losses};S.auth='ready';poll();PT=PT||setInterval(poll,8000)}else S.auth='name'}
+ if(FB.apiKey.startsWith('YOUR_')){S.why='FB in index.html still holds the placeholder text. Paste your Firebase config there, then commit.';S.auth='off';return render()}
+ if(!window.firebase){S.why='The Firebase scripts did not load (blocked, offline or an ad blocker).';S.auth='off';return render()}
+ try{if(!firebase.apps.length)firebase.initializeApp(FB);AU=firebase.auth();FS=firebase.firestore();
+  const u=await new Promise(r=>{const x=AU.onAuthStateChanged(v=>{x();r(v)})});
+  if(!u){S.auth='email';return render()}
+  UID=u.uid;UM={email:u.email};
+  const d=await FS.doc('users/'+UID).get();
+  if(d.exists){const p=d.data();S.user=p.username;if(p.xp>S.xp)S.xp=p.xp;if(p.ym==YM()&&p.mxp>mxp())S.ledger.push({src:'Synced from your account',amt:p.mxp-mxp(),ts:Date.now()});if((p.wins||0)+(p.losses||0)>S.wl.w+S.wl.l)S.wl={w:p.wins||0,l:p.losses||0};S.auth='ready';listen()}else S.auth='name'}
  catch(e){S.why='Error: '+(e.message||e);S.auth='off'}render()}
-async function gSign(){const{error}=await SB.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});if(error){S.note=error.message;render()}}
-async function sendCode(){const e=($('#ge').value||'').trim().toLowerCase();if(!/^\S+@\S+\.\S+$/.test(e)){S.note='Enter a valid email address.';return render()}
- S.note='Sending…';render();const{error}=await SB.auth.signInWithOtp({email:e,options:{shouldCreateUser:true}});if(error){S.note=error.message;return render()}PE=e;S.note='';S.auth='code';render()}
-async function verify(){const t=($('#go').value||'').trim(),{error}=await SB.auth.verifyOtp({email:PE,token:t,type:'email'});if(error){S.note='That code didn’t work. '+error.message;return render()}S.note='';init()}
+async function gSign(){try{await AU.signInWithPopup(new firebase.auth.GoogleAuthProvider());init()}catch(e){
+ S.note=e.code=='auth/unauthorized-domain'?'Add this site under Authentication > Settings > Authorized domains in Firebase.':e.code=='auth/popup-closed-by-user'?'Sign-in was cancelled.':e.code=='auth/operation-not-allowed'?'Turn on Google under Authentication > Sign-in method in Firebase.':(e.message||'Sign-in failed.');render()}}
 async function claim(){const u=($('#gu').value||'').trim().toLowerCase().replace(/^@/,'');if(!/^[a-z0-9_.]{3,20}$/.test(u)){S.note='Use 3–20 letters, numbers, dots or underscores.';return render()}
- const{error}=await SB.from('profiles').insert({...prof(),id:UID,username:u});if(error){S.note=error.code=='23505'?'That username is taken.':'Couldn’t create the account.';return render()}
- S.user=u;S.auth='ready';S.note='';poll();PT=PT||setInterval(poll,8000);render()}
-async function out(){if(SB)await SB.auth.signOut();clearInterval(PT);PT=0;UID=null;S.auth='email';render()}
-async function sync(){if(!SB||S.auth!='ready')return;const p=prof(),k=JSON.stringify(p);if(k==SY)return;SY=k;const{error}=await SB.from('profiles').update(p).eq('id',UID);if(error)SY=''}
+ try{const b=FS.batch();b.set(FS.doc('usernames/'+u),{uid:UID});b.set(FS.doc('users/'+UID),{...prof(),username:u});await b.commit();S.user=u;S.auth='ready';S.note='';listen()}
+ catch(e){S.note=e.code=='permission-denied'?'That username is taken, or the Firestore rules aren’t published yet.':'Couldn’t create the account. Try again.'}render()}
+async function out(){UN.forEach(f=>f());UN=[];if(AU)await AU.signOut();UID=null;S.auth='email';render()}
+async function sync(){if(!FS||S.auth!='ready')return;const p=prof(),k=JSON.stringify(p);if(k==SY)return;SY=k;try{await FS.doc('users/'+UID).set(p,{merge:true})}catch(e){SY=''}}
 
-/* ====== Shared data (polled every 8s) ====== */
-async function poll(){if(!SB||S.auth!='ready')return;try{
- const[a,b,c,d]=await Promise.all(['profiles','friends','challenges','replies'].map(t=>SB.from(t).select('*')));if(a.error)return;
- LB=a.data;FA={};(b.data||[]).forEach(r=>(FA[r.user_id]=FA[r.user_id]||[]).push(r.friend_id));
- CH=(c.data||[]).map(r=>({id:r.from_id,to:r.to_id,quizId:r.quiz_id,title:r.title,score:r.score,from:r.from_name,ts:+r.ts}));
- RP=(d.data||[]).map(r=>({id:r.from_id,to:r.to_id,score:r.score,from:r.from_name,ts:+r.ts}));
- if(!S.game&&!(document.activeElement&&/INPUT|SELECT/.test(document.activeElement.tagName)))render()}catch(e){}}
-async function addF(id){const{error}=await SB.from('friends').upsert({user_id:UID,friend_id:id});if(error)S.inv='Couldn’t add friend.';await poll();render()}
-async function delF(id){await SB.from('friends').delete().eq('user_id',UID).eq('friend_id',id);await poll();render()}
-async function duelSave(g){const o=g.opp;if(!SB||!o||!o.real)return;const c=o.theirScore==null,ts=Date.now();
- await SB.from(c?'challenges':'replies').upsert(c?{from_id:UID,to_id:o.id,quiz_id:+g.qz.id,title:g.qz.title,score:g.score,from_name:S.user,ts}:{from_id:UID,to_id:o.id,score:g.score,from_name:S.user,ts});poll()}
+/* ====== Shared data (live Firestore listeners) ====== */
+function listen(){if(UN.length)return;const r=()=>{if(!S.game&&!(document.activeElement&&/INPUT|SELECT/.test(document.activeElement.tagName)))render()};
+ const on=(c,f)=>UN.push(FS.collection(c).onSnapshot(s=>{f(s);r()}));
+ on('users',s=>LB=s.docs.map(d=>({id:d.id,...d.data()})));
+ on('friends',s=>{FA={};s.docs.forEach(d=>FA[d.id]=d.data().ids||[])});
+ on('challenges',s=>CH=s.docs.map(d=>({id:d.id,...d.data()})));
+ on('replies',s=>RP=s.docs.map(d=>({id:d.id,...d.data()})))}
+async function addF(id){try{await FS.doc('friends/'+UID).set({ids:[...new Set([...FR(),id])]})}catch(e){S.inv='Couldn’t add friend.'}render()}
+async function delF(id){try{await FS.doc('friends/'+UID).set({ids:FR().filter(x=>x!=id)})}catch(e){S.inv='Couldn’t remove friend.'}render()}
+async function duelSave(g){const o=g.opp;if(!FS||!o||!o.real)return;const c=o.theirScore==null;
+ try{await FS.doc((c?'challenges/':'replies/')+UID).set({to:o.id,quizId:+g.qz.id,title:g.qz.title,score:g.score,from:S.user,ts:Date.now()})}catch(e){}}
 function findF(){const u=$('#fs').value.trim().toLowerCase().replace(/^@/,''),r=LB.find(x=>x.username==u&&x.id!=UID);if(!r){S.inv='No player with that username yet.';return render()}S.inv='Added @'+u+'.';addF(r.id)}
 function chal(id){const q=$('#dq').value;S.inv='';begin(q,{u:nm(id),id,real:true,theirScore:null})}
 function playCh(cid){const c=CH.find(x=>x.id==cid);if(c)begin(c.quizId,{u:c.from,id:c.id,real:true,theirScore:c.score})}
