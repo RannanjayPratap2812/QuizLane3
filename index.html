@@ -77,7 +77,7 @@ const QZ=[
 {q:'0.5 is the same as 1/2.',o:TF,a:0,e:'Half is 0.5 in decimal form.'},
 {q:'What is the square root of 144?',o:['10','11','12','14'],a:2,e:'12 × 12 = 144.'},
 {q:'9² − 4² = ?',o:['55','65','45','75'],a:1,e:'81 − 16 = 65.'}]}];
-let S={auth:'loading',cards:[],target:50,rtime:'18:00',remind:false,rlast:'',mast:{},lessons:{},yr:5,theme:'auto',accent:'indigo',ls:'',lt:'',pr:{subj:'Maths',grade:5,lvl:2,n:10},user:'you_01',xp:0,ledger:[],plays:{},bests:{},stats:{},wl:{w:0,l:0},key:'',model:'gemini-2.5-flash',keyOk:null,reqs:0,pub:true,quizzes:QZ,tab:'learn',game:null,chat:[],draft:{title:'',subj:'',qs:[]},note:'',inv:'',lbf:'all',nid:10};
+let S={auth:'loading',cards:[],asked:{},target:50,rtime:'18:00',remind:false,rlast:'',mast:{},lessons:{},yr:5,theme:'auto',accent:'indigo',ls:'',lt:'',pr:{subj:'Maths',grade:5,lvl:2,n:10},user:'you_01',xp:0,ledger:[],plays:{},bests:{},stats:{},wl:{w:0,l:0},key:'',model:'gemini-2.5-flash',keyOk:null,reqs:0,pub:true,quizzes:QZ,tab:'learn',game:null,chat:[],draft:{title:'',subj:'',qs:[]},note:'',inv:'',lbf:'all',nid:10};
 try{const o=JSON.parse(localStorage.getItem('ql')||'null');if(o)Object.assign(S,o)}catch(e){}
 const save=()=>{try{const{game,tab,chat,note,inv,auth,...r}=S;localStorage.setItem('ql',JSON.stringify(r))}catch(e){}sync()};
 let T,OT,PQ;
@@ -92,67 +92,11 @@ function render(){
  const gate=S.auth!='ready'&&S.auth!='offline';$('#nav').style.display=gate?'none':'';$('#main').innerHTML=gate?vGate():S.game?vGame():({learn:vLearn,cards:vCards,notes:vNotes,set:vSet,play:vPlay,duel:vDuel,create:vCreate,ranks:vRanks,tutor:vTutor}[S.tab])();
  save();
 }
-const BANK=[
-['Science',1,1,'What do plants need to grow?','Sunlight and water',['Only candy','Only darkness','Plastic'],'Plants use sunlight, water and air to make food.'],
-['Science',1,2,'Which animal is a mammal?','Dolphin',['Shark','Trout','Eagle'],'Dolphins breathe air and feed milk to their young.'],
-['Science',2,1,'What state of matter is ice?','Solid',['Liquid','Gas','Plasma'],'Ice is frozen water, a solid.'],
-['Science',2,2,'Which planet is known as the Red Planet?','Mars',['Venus','Jupiter','Mercury'],'Iron oxide gives Mars its red colour.'],
-['Science',3,2,'What is the powerhouse of the cell?','Mitochondria',['Nucleus','Ribosome','Vacuole'],'Mitochondria release energy from food.'],
-['Science',3,3,'What is the chemical symbol for sodium?','Na',['So','S','Sd'],'Na comes from the Latin natrium.'],
-['Science',4,2,'What is the unit of electrical resistance?','Ohm',['Volt','Watt','Ampere'],'Resistance is measured in ohms.'],
-['Science',4,3,'Which law states F = ma?','Newton’s second law',['Newton’s first law','Ohm’s law','Boyle’s law'],'Force equals mass times acceleration.'],
-['Geography',1,1,'Which is the largest ocean?','Pacific',['Atlantic','Indian','Arctic'],'The Pacific covers about a third of Earth.'],
-['Geography',1,2,'On which continent is Egypt?','Africa',['Asia','Europe','South America'],'Egypt is in north-east Africa.'],
-['Geography',2,1,'What is the capital of France?','Paris',['Lyon','Marseille','Nice'],'Paris is on the River Seine.'],
-['Geography',2,2,'Which river flows through London?','Thames',['Severn','Mersey','Clyde'],'The Thames runs through London.'],
-['Geography',3,2,'Which is the longest river in Africa?','Nile',['Congo','Niger','Zambezi'],'The Nile is about 6,650 km long.'],
-['Geography',3,3,'Which is the largest hot desert?','Sahara',['Gobi','Kalahari','Arabian'],'The Sahara covers much of northern Africa.'],
-['Geography',4,2,'Which line is 0° latitude?','Equator',['Prime Meridian','Tropic of Cancer','Date Line'],'The Equator divides north from south.'],
-['Geography',4,3,'What is the capital of Kazakhstan?','Astana',['Almaty','Tashkent','Bishkek'],'Astana has been the capital since 1997, renamed back in 2022.'],
-['English',1,1,'Which word is a noun?','Dog',['Run','Quickly','Blue'],'A noun names a person, animal, place or thing.'],
-['English',1,2,'What is the plural of “child”?','Children',['Childs','Childes','Childrens'],'Child has an irregular plural.'],
-['English',2,1,'Which word is a verb?','Jump',['Table','Happy','Under'],'A verb is an action word.'],
-['English',2,2,'Which word is a synonym of “happy”?','Joyful',['Gloomy','Angry','Tired'],'Synonyms have similar meanings.'],
-['English',3,2,'Which is a simile?','As brave as a lion',['The wind howled','Time is money','He is a rock'],'Similes compare using “as” or “like”.'],
-['English',3,3,'Which sentence is correct?','Their car is over there.',['There car is over their.','Their car is over their.','They’re car is over there.'],'Their shows ownership; there shows place.'],
-['English',4,2,'What is a metaphor?','A comparison without “like” or “as”',['A comparison using “like”','An exaggeration','A repeated sound'],'A metaphor says one thing is another.'],
-['English',4,3,'Which uses a semicolon correctly?','I was tired; I kept working.',['I was; tired I kept working.','Although; I was tired.','I was tired; and working.'],'A semicolon joins two related independent clauses.'],
-['History',1,1,'Who sailed to the Americas in 1492?','Christopher Columbus',['Marco Polo','Captain Cook','Magellan'],'Columbus landed in the Caribbean in 1492.'],
-['History',1,2,'What did the ancient Romans build to carry water?','Aqueducts',['Skyscrapers','Canals of ice','Railways'],'Aqueducts carried water to cities.'],
-['History',2,1,'Which civilisation built the pyramids at Giza?','Ancient Egyptians',['Romans','Greeks','Aztecs'],'They were built for pharaohs over 4,000 years ago.'],
-['History',2,2,'In which year did World War II end?','1945',['1939','1918','1950'],'The war ended in 1945.'],
-['History',3,2,'Who was the first US President?','George Washington',['Thomas Jefferson','John Adams','Abraham Lincoln'],'Washington served from 1789 to 1797.'],
-['History',3,3,'The French Revolution began in which year?','1789',['1776','1804','1815'],'The Bastille was stormed in July 1789.'],
-['History',4,2,'Which wall fell in 1989?','The Berlin Wall',['The Great Wall','Hadrian’s Wall','The Western Wall'],'Its fall led to German reunification in 1990.'],
-['History',4,3,'Which treaty ended World War I with Germany?','Treaty of Versailles',['Treaty of Paris','Treaty of Vienna','Treaty of Tordesillas'],'It was signed in 1919.']];
 const SUBJ=[['Maths','Maths'],['Science','Science'],['Geography','Geography'],['English','English'],['History','History'],['Mixed','Mixed (all subjects)']],GR=Array.from({length:12},(_,i)=>[i+1,'Grade '+(i+1)]),LV=[[1,'Easy'],[2,'Medium'],[3,'Hard']],LVN={1:'easy',2:'medium',3:'hard'};
 const opts=(a,c)=>a.map(([v,l])=>`<option value="${v}" ${v==c?'selected':''}>${l}</option>`).join('');
 const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
 function mkq(x){const o=[x[4],...x[5]].map((t,i)=>({t,c:!i})).sort(()=>Math.random()-.5);return{q:x[3],o:o.map(z=>z.t),a:o.findIndex(z=>z.c),e:x[6],s:x[0]}}
-function pool(s,g,l){const b=Math.ceil(g/3);return BANK.filter(x=>x[0]==s).map(x=>({k:Math.abs(x[1]-b)*2+Math.abs(x[2]-l)+Math.random()*.5,x})).sort((a,b)=>a.k-b.k).map(o=>mkq(o.x))}
-function mathQ(g,l){const d=Math.ceil(g/3)-1;let q,a;
- if(d==0){let x=rnd(1,10*l+4),y=rnd(1,10*l+4);if(Math.random()<.5){q=`${x} + ${y} = ?`;a=x+y}else{if(y>x)[x,y]=[y,x];q=`${x} − ${y} = ?`;a=x-y}}
- else if(d==1){const x=rnd(2,5+3*l),y=rnd(2,5+3*l);q=`${x} × ${y} = ?`;a=x*y}
- else if(d==2){const p=[10,20,25,50][rnd(0,3)],n=rnd(1,4*l);q=`What is ${p}% of ${n*20}?`;a=p*n/5}
- else{const x=rnd(2,4+3*l),m=rnd(2,2+2*l),b=rnd(1,15);q=`Solve for x: ${m}x + ${b} = ${m*x+b}`;a=x}
- const ds=new Set();while(ds.size<3){const v=a+[-10,-2,-1,1,2,10][rnd(0,5)];if(v!=a&&v>=0)ds.add(v)}
- return mkq(['Maths',0,0,q,String(a),[...ds].map(String),`The answer is ${a}.`])}
-function buildPractice(s,g,l,n){const subs=s=='Mixed'?['Maths','Science','Geography','English','History']:[s],L={};subs.forEach(x=>{if(x!='Maths')L[x]=pool(x,g,l)});const qs=[];let i=0,guard=0;
- while(qs.length<n&&guard++<400){const x=subs[i++%subs.length];if(x=='Maths')qs.push(mathQ(g,l));else if(L[x].length)qs.push(L[x].shift())}return qs}
 function rd(){const n=$('#pn');if(n)S.pr.n=Math.max(1,Math.min(20,+n.value||5))}
-function startPractice(){rd();const p=S.pr,qs=buildPractice(p.subj,+p.grade,+p.lvl,+p.n);if(!qs.length){S.note='No questions found for those settings.';return render()}
- PQ={id:'p-'+p.subj,title:'Practice',subj:p.subj,qs,short:qs.length<p.n};begin(PQ.id)}
-async function aiPractice(){rd();const p=S.pr;if(!S.key)return;S.note='Generating…';render();
- try{const j=JSON.parse((await gem(`Write ${p.n} multiple-choice questions on ${p.subj=='Mixed'?'a mix of school subjects':p.subj} for grade ${p.grade} students, difficulty ${LVN[p.lvl]}. Return only JSON: {"questions":[{"q":"","o":["","","",""],"a":0,"e":""}]}`,1)).replace(/```json|```/g,'').trim());
- const qs=j.questions.filter(q=>q.o&&q.o.length==4&&q.a>=0&&q.a<4).map(q=>({...q,s:p.subj=='Mixed'?'General':p.subj}));if(!qs.length)throw new Error('The AI returned no usable questions.');
- PQ={id:'ai-'+p.subj,title:'AI practice',subj:p.subj,qs};S.note='';begin(PQ.id)}catch(e){S.note=e instanceof SyntaxError?'The AI reply wasn’t valid. Try again.':gerr(e);render()}}
-function practiceCard(){const p=S.pr;return `<div class="card"><h2>Custom practice</h2><p class="muted">Choose a subject, your grade, the level and how many questions. No AI key needed.</p>
-<div class="grid"><div><label for="ps">Subject</label><select id="ps" onchange="S.pr.subj=this.value;save()">${opts(SUBJ,p.subj)}</select></div>
-<div><label for="pg">Grade</label><select id="pg" onchange="S.pr.grade=+this.value;save()">${opts(GR,p.grade)}</select></div>
-<div><label for="pl">Level</label><select id="pl" onchange="S.pr.lvl=+this.value;save()">${opts(LV,p.lvl)}</select></div>
-<div><label for="pn">Number of questions (1–20)</label><input id="pn" type="number" min="1" max="20" value="${p.n}"></div></div>
-<div class="row" style="margin-top:12px"><button class="pri" onclick="startPractice()">Start practice</button><button onclick="aiPractice()" ${S.key?'':'disabled'}>Generate with AI</button></div>
-<p class="muted" role="status">${esc(S.note)||(S.key?'AI generation is on.':'AI generation is off. Add your own key in Tutor to turn it on. Everything else works without it.')}</p></div>`}
 function vPlay(){return practiceCard()+`<h2>Extra quizzes (general knowledge, not curriculum-based)</h2><p class="muted">Self-paced play. Replaying the same quiz earns less XP.</p>`+S.quizzes.map(z=>`<div class="card row"><div><h3>${esc(z.title)}</h3><span class="muted">${esc(z.subj)} • ${z.qs.length} questions • played ${S.plays[z.id]||0}×</span></div><button class="pri" onclick="begin(${z.id})">Start</button></div>`).join('')}
 
 function begin(id,opp){clearInterval(T);clearTimeout(OT);const qz=PQ&&PQ.id==id?PQ:S.quizzes.find(x=>x.id==id);
@@ -222,7 +166,7 @@ function vRanks(){const m=mxp(),ym=YM(),fr=FR(),all=LB.filter(r=>r.id!=UID&&!r.h
  <div class="card"><h3>XP ledger</h3>${S.ledger.slice(-6).reverse().map(l=>`<div class="row"><span class="muted">${esc(l.src)}</span><b>+${l.amt}</b></div>`).join('')||'<p class="muted">Every XP award is logged here.</p>'}</div>`}
 
 async function gem(p,json){
- const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${S.model}:generateContent`,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':S.key},body:JSON.stringify({contents:[{parts:[{text:p}]}],...(json?{generationConfig:{responseMimeType:'application/json'}}:{})})});
+ const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${S.model}:generateContent`,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':S.key},body:JSON.stringify({contents:[{parts:[{text:p}]}],generationConfig:{temperature:1,...(json?{responseMimeType:'application/json'}:{})}})});
  if(!r.ok){let m='';try{m=(await r.json()).error.message}catch(e){}throw new Error(r.status==429?'Rate limited or out of free quota. '+m:'Google error '+r.status+': '+m)}
  const d=await r.json();S.reqs++;return d.candidates[0].content.parts[0].text}
 const gerr=e=>e instanceof TypeError||/fetch|network|load failed/i.test(e.message||'')?'Couldn’t reach Google (a network block, not a bad key). Open the app from your own site (github.io), not a preview, and turn off ad blockers, VPNs or school filters for generativelanguage.googleapis.com.':e.message;
@@ -274,7 +218,7 @@ const vSet=()=>`<h2>Settings</h2><div class="card"><h3>Theme</h3><div class="row
 <label for="rt">Reminder time</label><input id="rt" type="time" value="${S.rtime||'18:00'}" onchange="S.rtime=this.value;render()">
 <div class="row" style="margin-top:10px;justify-content:flex-start"><button class="${S.remind?'on':''}" onclick="S.remind=!S.remind;render()">${S.remind?'Reminder on':'Turn on reminder'}</button><button onclick="dlIcs()">Add daily reminder to my calendar</button></div>
 <p class="muted">The reminder appears in Alerts and the Learn page, and as a browser alert if you turn alerts on below, while Quizlane is open. The calendar reminder also works when the site is closed.</p></div>
-<div class="card"><h3>Notifications</h3><p class="muted">Get a browser alert when a friend or challenge request arrives while Quizlane is open in a tab. Alerts when the site is fully closed aren’t supported. App version: requests and alerts v3.</p><button class="${S.notif?'on':''}" onclick="togNotif()">${S.notif?'Alerts on':'Turn on alerts'}</button><p class="muted" role="status">${esc(S.note)}</p></div>
+<div class="card"><h3>Notifications</h3><p class="muted">Get a browser alert when a friend or challenge request arrives while Quizlane is open in a tab. Alerts when the site is fully closed aren’t supported. App version: v5 (curriculum, flashcards, fresh question sets).</p><button class="${S.notif?'on':''}" onclick="togNotif()">${S.notif?'Alerts on':'Turn on alerts'}</button><p class="muted" role="status">${esc(S.note)}</p></div>
 <div class="card"><h3>Account</h3><p class="muted">${S.auth=='ready'?'Signed in as @'+esc(S.user)+(UM&&UM.email?' ('+esc(UM.email)+')':''):'Playing offline.'}</p>${S.auth=='ready'?'<button onclick="out()">Sign out</button>':'<button class="pri" onclick="init()">Sign in</button>'}</div>`;
 
 /* ====== Auth screens (Firebase, Google sign-in only) ====== */
@@ -386,7 +330,7 @@ Citizenship:{3:'Rights and responsibilities|Democracy and the UK system|Law and 
 
 const KS=y=>y<=2?1:y<=6?2:y<=9?3:4;
 const pct=k=>{const m=S.mast[k];return m&&m.t?Math.round(100*m.c/m.t):0};
-const tk=(s,k,t)=>s+'|'+k+'|'+t;
+const tk=(s,k,t)=>s+'|'+k+'|'+t,lk=(s,k,t)=>tk(s,k,t)+'|'+(S.yr||5);
 // GEN-START
 const R=(a,b)=>a+Math.floor(Math.random()*(b-a+1)),P=a=>a[R(0,a.length-1)];
 const nd=a=>{const s=new Set();while(s.size<3){const v=a+P([-10,-5,-2,-1,1,2,5,10]);if(v!=a&&v>=0)s.add(v)}return[...s]};
@@ -464,7 +408,7 @@ function vCards(){const d=dueCards(),c=d[0];return `<h2>Flashcards</h2><p class=
 
 /* ====== Seneca-style lesson player: read a short section, answer questions, build mastery ====== */
 let LP=null;
-function openLesson(s,k,t){const key=tk(s,k,t),L=S.lessons[key];let secs,qs;
+function openLesson(s,k,t){const key=tk(s,k,t),L=S.lessons[lk(s,k,t)];let secs,qs;
  if(L){secs=L.sections;qs=L.qs}else if(s=='Maths'){secs=NOTES[kindOf(t)].map(([h,p])=>({h,p}));qs=genQs(t,S.yr||5,2,6)}
  else if(S.key)return aiTopic(s,k,t,8,false,true);else{S.note='Lessons for this subject need your own AI key (Tutor tab). Maths lessons are built in.';return render()}
  LP={key,s,k,t,secs,qs,si:0,qi:0,per:Math.max(1,Math.ceil(qs.length/secs.length)),stage:'read',sel:null,ok:0,miss:[],done:false,added:false};render()}
@@ -485,24 +429,28 @@ function vLearn(){if(LP)return vLP();const y=S.yr||5,ks=KS(y),tx=txp(),tg=S.targ
  const sub=S.ls&&CUR[S.ls]&&CUR[S.ls][ks]?S.ls:'';
  const h=`<h2>Learn</h2><p class="muted">Topics follow the England national curriculum programmes of study, grouped by key stage. This is an independent study aid, not an official DfE product (official source: gov.uk, “The national curriculum”).</p>${goal}<div class="card"><label for="yr">Year group</label><select id="yr" onchange="S.yr=+this.value;S.pr.grade=S.yr;S.ls='';render()">${opts(Array.from({length:11},(_,i)=>[i+1,'Year '+(i+1)+' (KS'+KS(i+1)+')']),y)}</select></div>`;
  if(!sub)return h+`<div class="grid">`+Object.keys(CUR).filter(s=>CUR[s][ks]).map(s=>{const ts=CUR[s][ks].split('|'),a=Math.round(ts.reduce((n,t)=>n+pct(tk(s,ks,t)),0)/ts.length);return `<button class="card" style="text-align:left" onclick="S.ls='${esc(s)}';render()"><h3>${esc(s)}</h3><div class="bar"><i style="width:${a}%"></i></div><span class="muted">${a}% mastery • ${ts.length} topics</span></button>`}).join('')+`</div>`;
- return h+`<button onclick="S.ls='';render()">All subjects</button><h2 style="margin-top:12px">${esc(sub)}</h2><p class="muted" role="status">${esc(S.note)}</p>`+CUR[sub][ks].split('|').map(t=>{const k=tk(sub,ks,t),p=pct(k),can=sub=='Maths'||S.key||S.lessons[k];return `<div class="card"><div class="row"><div><h3>${esc(t)}</h3><span class="muted">${p}% mastery ${'★'.repeat(p>=80?3:p>=50?2:p>0?1:0)}</span></div><div><button class="pri" onclick="openLesson('${esc(sub)}',${ks},'${esc(t)}')" ${can?'':'disabled title="Needs your AI key"'}>Lesson</button> <button onclick="runTopic('${esc(sub)}',${ks},'${esc(t)}',10,2)">Practise</button></div></div><div class="bar" style="margin-top:8px"><i style="width:${p}%"></i></div></div>`}).join('')+(S.key?'':'<p class="muted">Maths lessons and practice are built in. Other subjects need your own AI key (Tutor tab) to write lessons and questions for the topic.</p>')}
+ return h+`<button onclick="S.ls='';render()">All subjects</button><h2 style="margin-top:12px">${esc(sub)}</h2><p class="muted" role="status">${esc(S.note)}</p>`+CUR[sub][ks].split('|').map(t=>{const k=tk(sub,ks,t),p=pct(k),can=sub=='Maths'||S.key||S.lessons[k+'|'+y];return `<div class="card"><div class="row"><div><h3>${esc(t)}</h3><span class="muted">${p}% mastery ${'★'.repeat(p>=80?3:p>=50?2:p>0?1:0)}</span></div><div><button class="pri" onclick="openLesson('${esc(sub)}',${ks},'${esc(t)}')" ${can?'':'disabled title="Needs your AI key"'}>Lesson</button> <button onclick="runTopic('${esc(sub)}',${ks},'${esc(t)}',10,2)">Practise</button></div></div><div class="bar" style="margin-top:8px"><i style="width:${p}%"></i></div></div>`}).join('')+(S.key?'':'<p class="muted">Maths lessons and practice are built in. Other subjects need your own AI key (Tutor tab) to write lessons and questions for the topic.</p>')}
 
 async function aiTopic(s,k,t,n,play,openL){if(!S.key)return;S.note='Writing your '+(play?'questions':'lesson')+'…';render();
  try{const j=JSON.parse(clean(await gem(`You write for pupils in England following the National Curriculum programme of study. Key Stage ${k}, Year ${S.yr}, subject ${s}, topic "${t}". Only include content that belongs to this topic and key stage in that programme of study; nothing from other topics or key stages. Use British spelling and UK contexts. Return only JSON: {"sections":[{"h":"","p":""}],"questions":[{"q":"","o":["","","",""],"a":0,"e":""}]} with 3 short sections and exactly ${Math.max(6,n)} questions, each with one correct option and a one-sentence explanation.`,1)));
   const qs=(j.questions||[]).filter(q=>q.o&&q.o.length==4&&q.a>=0&&q.a<4);if(!qs.length||!j.sections)throw new Error('The AI returned no usable lesson.');
-  S.lessons[tk(s,k,t)]={sections:j.sections,qs};S.note='';if(play)return runTopic(s,k,t,n,S.pr.lvl,true);if(openL)return openLesson(s,k,t)}
+  S.lessons[lk(s,k,t)]={sections:j.sections,qs};S.note='';if(openL)return openLesson(s,k,t)}
  catch(e){S.note=e instanceof SyntaxError?'The AI reply wasn’t valid. Try again.':gerr(e)}render()}
-function runTopic(s,k,t,n,l,fresh){const L=S.lessons[tk(s,k,t)],y=S.yr||5;let qs=[];
- if(s=='Maths')qs=genQs(t,y,l,n);
- else if(L&&(L.qs.length>=n||!S.key||fresh))qs=L.qs.slice(0,n).map(q=>({...q,s}));
- else if(S.key)return aiTopic(s,k,t,n,true);
- if(!qs.length){S.tab=S.tab=='learn'?'learn':S.tab;S.note='Questions for '+s+' need your own AI key (Tutor tab). Maths has built-in curriculum practice.';return render()}
- PQ={id:'t-'+tk(s,k,t),title:t,subj:s,qs,topic:tk(s,k,t),short:qs.length<n};begin(PQ.id)}
+function runTopic(s,k,t,n,l){const y=S.yr||5;l=+l||2;
+ if(s!='Maths'){if(!S.key){S.note='Questions for '+s+' are written for your exact year and topic by AI, so they need your own key (Tutor tab). Maths has built-in curriculum practice.';return render()}return aiPlay(s,k,t,n,l)}
+ const qs=genQs(t,y,l,n);PQ={id:'t-'+tk(s,k,t),title:t,subj:s,qs,topic:tk(s,k,t),short:qs.length<n};begin(PQ.id)}
+async function aiPlay(s,k,t,n,l){const key=tk(s,k,t),avoid=(S.asked[key]||[]).slice(-30);S.note='Writing a new set of questions for Year '+S.yr+', '+t+'…';render();
+ try{const j=JSON.parse(clean(await gem(`You write fresh quiz questions for pupils in England following the National Curriculum programme of study. Key Stage ${k}, Year ${S.yr}, subject ${s}, topic "${t}", difficulty ${LVN[l]} (${['recall of key facts','applying the idea in a simple context','multi-step questions needing reasoning'][l-1]}). Write exactly ${n} different multiple-choice questions, every one specifically about this topic and pitched at Year ${S.yr}; nothing from other topics. British spelling. Vary the question styles. ${avoid.length?'Do not repeat or closely copy these earlier questions: '+JSON.stringify(avoid)+'. ':''}Variation code ${Math.random().toString(36).slice(2,8)}. Return only JSON: {"questions":[{"q":"","o":["","","",""],"a":0,"e":""}]} where a is the index of the single correct option and e is a one-sentence explanation.`,1)));
+  const seen=new Set(),qs=(j.questions||[]).filter(q=>q.q&&q.o&&q.o.length==4&&q.a>=0&&q.a<4&&!seen.has(q.q)&&seen.add(q.q)).slice(0,n).map(q=>{const o=q.o.map((x,i)=>({x,c:i==q.a})).sort(()=>Math.random()-.5);return{q:q.q,o:o.map(z=>z.x),a:o.findIndex(z=>z.c),e:q.e||'',s}});
+  if(!qs.length)throw new Error('The AI returned no usable questions.');
+  S.asked[key]=[...avoid,...qs.map(q=>q.q)].slice(-40);S.note='';
+  PQ={id:'t-'+key,title:t,subj:s,qs,topic:key,short:qs.length<n};begin(PQ.id)}
+ catch(e){S.note=e instanceof SyntaxError?'The AI reply wasn’t valid. Try again.':gerr(e);render()}}
 
 /* ====== Practice tab: curriculum topic picker ====== */
 function curSel(){rd();const p=S.pr,y=+p.grade,ks=KS(y),subs=Object.keys(CUR).filter(s=>CUR[s][ks]),sub=subs.includes(p.subj)?p.subj:subs[0],ts=CUR[sub][ks].split('|');S.yr=y;return[sub,ks,ts[p.ti||0]||ts[0],+p.n,+p.lvl]}
 function startPractice(){const[s,k,t,n,l]=curSel();runTopic(s,k,t,n,l)}
-function aiGo(){const[s,k,t,n]=curSel();if(S.key)aiTopic(s,k,t,n,true)}
+function aiGo(){const[s,k,t,n,l]=curSel();if(S.key)runTopic(s,k,t,n,l)}
 function practiceCard(){const p=S.pr,y=+p.grade,ks=KS(y),subs=Object.keys(CUR).filter(s=>CUR[s][ks]),sub=subs.includes(p.subj)?p.subj:subs[0],ts=CUR[sub][ks].split('|');
  return `<div class="card"><h2>Curriculum practice</h2><p class="muted">Questions come only from the England national curriculum topic you choose. Maths is built in; other subjects use your AI key.</p>
 <div class="grid"><div><label for="pg">Year group</label><select id="pg" onchange="rd();S.pr.grade=+this.value;S.yr=+this.value;S.pr.ti=0;render()">${opts(Array.from({length:11},(_,i)=>[i+1,'Year '+(i+1)+' (KS'+KS(i+1)+')']),y)}</select></div>
